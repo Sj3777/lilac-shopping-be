@@ -22,3 +22,5 @@ app.use("/api/product", route);
 app.listen(port, () => {
     console.log("server is started at port: ".bold.brightYellow+ `${port}`.brightYellow)
 })
+
+//Script is written and developed by Sudhakar Jha
