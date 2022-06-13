@@ -140,9 +140,11 @@ const generateToken = (err, user) => {
 
 exports.addToCart = async (req, res) => {
     console.log("cart body/headers----->", req.headers.user_id)
+    let getQty = await productSchema.findOne({_id: req.body.product_id}, {p_qty: 1, _id: 0})
+    console.log("----get qty--->", getQty)
     cartSchema.findOne({ 'user_id': req.headers.user_id, 'product_id': req.body.product_id })
         .exec((err, ct) => {
-            console.log("------cart gettttt", ct)
+            // console.log("------cart gettttt", ct)
             if (err) {
                 res.status(200).send({
                     "status": "Error",
@@ -154,7 +156,10 @@ exports.addToCart = async (req, res) => {
                     cartSchema.findByIdAndUpdate({ _id: ct._id }, { product_qty: ct.product_qty + 1 }, { new: true })
                         .exec((err, upCart) => {
                             if (upCart) {
-                                console.log("-----upcart", upCart)
+                                // console.log("-----upcart", upCart)
+                                productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty - 1}, {new: true}, (qe, qr) => {
+                                    console.log("qssss---", qr)
+                                })
                                 res.status(200).send({
                                     "status": "Success",
                                     "message": "Cart updated suceessfully!",
@@ -166,13 +171,16 @@ exports.addToCart = async (req, res) => {
                     cartSchema.findByIdAndUpdate({ _id: ct._id }, { product_qty: ct.product_qty - 1 }, { new: true })
                         .exec((err, upCart) => {
                             if (upCart) {
-                                console.log("-----upcart", upCart)
+                                // console.log("-----upcart", upCart)
                                 if (upCart.product_qty <= 0) {
+                                    productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty + 1}, {new: true}, (qe, qr) => {
+                                        console.log("qssss---", qr)
+                                    })
                                     cartSchema.findByIdAndDelete(upCart._id, (er, rt) => {
                                         if (er) {
                                             console.log("deleted---", er)
                                         } else {
-                                            console.log("deleted---", rt)
+                                            // console.log("deleted---", rt)
                                             res.status(200).send({
                                                 "status": "Success",
                                                 "message": "Item is removed!"
@@ -181,6 +189,7 @@ exports.addToCart = async (req, res) => {
                                     })
 
                                 } else {
+
                                     res.status(200).send({
                                         "status": "Success",
                                         "message": "Cart updated suceessfully!",
@@ -198,6 +207,9 @@ exports.addToCart = async (req, res) => {
                         "message": "Not a good request!",
                     });
                 }else{
+                    productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty - 1}, {new: true}, (qe, qr) => {
+                        console.log("qssss---", qr)
+                    })
                     const cart = new cartSchema({
                         "user_id": req.headers.user_id,
                         "product_id": req.body.product_id,
@@ -210,7 +222,7 @@ exports.addToCart = async (req, res) => {
                             "message": "Product added to cart successfully!",
                             "data": data
                         });
-                        console.log("--------cart user_product added");
+                        // console.log("--------cart user_product added");
                     } catch (err) {
                         console.log(err);
                     }
@@ -224,7 +236,7 @@ exports.getCart = (req, res) => {
     cartSchema.find({ user_id: req.headers.user_id })
         .populate('product_id')
         .exec((err, cart) => {
-            console.log("---------get data", cart)
+            // console.log("---------get data", cart)
             res.status(200).json({
                 "status": "Success",
                 "Data": cart
@@ -242,13 +254,18 @@ exports.getAllUsers = (req, res) => {
     })
 }
 
-exports.removeItemCart = (req, res) => {
+exports.removeItemCart = async (req, res) => {
     console.log("item to remove----", req.body.product_id)
+    let getQty = await productSchema.findOne({_id: req.body.product_id}, {p_qty: 1, _id: 0})
+    // await productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty + getQty.p_qty}, {new: true})
     cartSchema.findOneAndDelete({ 'user_id': req.headers.user_id, 'product_id': req.body.product_id }, (er, rt) => {
         if (er) {
             console.log("deleted---", er)
         } else {
             console.log("deleted---", rt)
+            productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty + rt.product_qty}, {new: true}, (qe, qr) => {
+                // console.log("----removed--", qr)
+            })
             res.status(200).send({
                 "status": "Success",
                 "message": "Item is removed!",
