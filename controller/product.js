@@ -204,7 +204,7 @@ exports.addToCart = async (req, res) => {
                         "product_qty": 1,
                     });
                     try {
-                        const data = cart.create();
+                        const data = cart.save();
                         res.status(200).send({
                             "status": "Success",
                             "message": "Product added to cart successfully!",
