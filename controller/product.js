@@ -189,7 +189,9 @@ exports.addToCart = async (req, res) => {
                                     })
 
                                 } else {
-
+                                    productSchema.findByIdAndUpdate({_id: req.body.product_id}, {p_qty: getQty.p_qty + 1}, {new: true}, (qe, qr) => {
+                                        console.log("qssss---", qr)
+                                    })
                                     res.status(200).send({
                                         "status": "Success",
                                         "message": "Cart updated suceessfully!",
